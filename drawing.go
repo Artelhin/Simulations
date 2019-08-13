@@ -1,7 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-gl/gl/all-core/gl"
+	"github.com/go-gl/glfw/v3.2/glfw"
+	"log"
+	"strings"
 )
 
 const (
@@ -13,18 +17,27 @@ const (
     }
 ` + "\x00"
 
-	fragmentShaderSource = `
+	cellShaderSource = `
     #version 410
     out vec4 frag_colour;
     void main() {
         frag_colour = vec4(1, 1, 1, 1);
     }
 ` + "\x00"
+
+	foodShaderSource = `
+    #version 410
+    out vec4 frag_colour;
+    void main() {
+        frag_colour = vec4(0, 1, 0, 1);
+    }
+` + "\x00"
 )
 
 type Drawable struct {
-	x int
-	y int
+	prog uint32
+	x    int
+	y    int
 }
 
 var (
@@ -39,7 +52,20 @@ var (
 	}
 )
 
-func (d *Drawable)Draw() {
+func DrawCanvas() {
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	for x := range grid {
+		for y := range grid[x] {
+			if grid[x][y] == nil {
+				continue
+			}
+			grid[x][y].Draw()
+		}
+	}
+}
+
+func (d *Drawable) Draw() {
+	gl.UseProgram(d.prog)
 	points := make([]float32, len(square), len(square))
 	copy(points, square)
 
@@ -66,7 +92,7 @@ func (d *Drawable)Draw() {
 
 	vao := makeVao(points)
 	gl.BindVertexArray(vao)
-	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(square) / 3))
+	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(square)/3))
 }
 
 func makeVao(points []float32) uint32 {
@@ -85,4 +111,59 @@ func makeVao(points []float32) uint32 {
 	return vao
 }
 
-func Render() {}
+func Render(window *glfw.Window) {
+	glfw.PollEvents()
+	window.SwapBuffers()
+}
+
+func initWindow() *glfw.Window {
+
+	//init glfw and create a window
+	if err := glfw.Init(); err != nil {
+		log.Fatal("can't init glfw: ", err)
+	}
+
+	glfw.WindowHint(glfw.Resizable, glfw.False)
+	glfw.WindowHint(glfw.ContextVersionMajor, 4)
+	glfw.WindowHint(glfw.ContextVersionMinor, 1)
+	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
+	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+
+	window, err := glfw.CreateWindow(width, height, "Test shit", nil, nil)
+	if err != nil {
+		log.Fatal("can't create window: ", err)
+	}
+	window.MakeContextCurrent()
+
+	//init OpenGL
+	if err := gl.Init(); err != nil {
+		log.Fatal("can't init opengl", err)
+	}
+	version := gl.GoStr(gl.GetString(gl.VERSION))
+	log.Println("OpenGL version", version)
+
+	return window
+}
+
+func compileShader(source string, shaderType uint32) (uint32, error) {
+	shader := gl.CreateShader(shaderType)
+
+	csources, free := gl.Strs(source)
+	gl.ShaderSource(shader, 1, csources, nil)
+	free()
+	gl.CompileShader(shader)
+
+	var status int32
+	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status)
+	if status == gl.FALSE {
+		var logLength int32
+		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
+
+		lg := strings.Repeat("\x00", int(logLength+1))
+		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(lg))
+
+		return 0, fmt.Errorf("failed to compile %v: %v", source, lg)
+	}
+
+	return shader, nil
+}
