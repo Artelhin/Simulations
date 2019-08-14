@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/go-gl/gl/all-core/gl"
-	"log"
 	"math"
 	"math/rand"
 )
@@ -86,10 +85,10 @@ func (c *Cell) checkFoodNearby() (int, int) {
 
 			//normalize
 			if k.x != 0 {
-				k.x = k.x/k.x
+				k.x = k.x / k.x
 			}
 			if k.y != 0 {
-				k.y = k.y/k.y
+				k.y = k.y / k.y
 			}
 			return k.x, k.y
 		}
@@ -106,10 +105,6 @@ func checkFood(x, y int) bool {
 
 func (c *Cell) Tick() {
 	x, y := c.checkFoodNearby()
-
-	if c.isFood == true {
-		log.Println("WARNING: FOOD IS MOVING!!!")
-	}
 
 	move := func(x, y int) {
 		if x == 0 && y == 0 {
@@ -134,8 +129,8 @@ func (c *Cell) Tick() {
 		return
 	}
 	if math.Abs(float64(x)) >= math.Abs(float64(y)) {
-		move(x,0)
+		move(x, 0)
 	} else {
-		move(0,y)
+		move(0, y)
 	}
 }

@@ -26,6 +26,7 @@ type Config struct {
 	Height  int `yaml:"height"`
 	Rows    int `yaml:"rows"`
 	Columns int `yaml:"columns"`
+	Cells   int `yaml:"cells"`
 	Fps     int `yaml:"fps"`
 }
 
@@ -39,6 +40,8 @@ var (
 
 	rows    = 100
 	columns = 100
+
+	cells = 10
 
 	fps = 10
 )
@@ -92,7 +95,7 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 
-	cells := make([]*Cell, 10, 10)
+	cells := make([]*Cell, conf.Cells, conf.Cells)
 	for i := range cells {
 		cells[i] = NewLiveCell()
 		grid[cells[i].x][cells[i].y] = cells[i]
