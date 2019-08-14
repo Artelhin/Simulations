@@ -3,13 +3,37 @@ package main
 import (
 	"github.com/go-gl/gl/all-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"runtime"
 	"time"
 )
 
-const (
+/*const (
+	width  = 1000
+	height = 1000
+
+	rows    = 100
+	columns = 100
+
+	fps = 10
+)*/
+
+type Config struct {
+	Width   int `yaml:"width"`
+	Height  int `yaml:"height"`
+	Rows    int `yaml:"rows"`
+	Columns int `yaml:"columns"`
+	Fps     int `yaml:"fps"`
+}
+
+var (
+	grid    [][]*Cell
+	shaders map[string]uint32
+
+	//default
 	width  = 1000
 	height = 1000
 
@@ -19,16 +43,40 @@ const (
 	fps = 10
 )
 
-var (
-	grid    [][]*Cell
-	shaders map[string]uint32
-)
-
 func init() {
 	runtime.LockOSThread()
 }
 
+func Configure(fileName string) (Config, error) {
+	var cnf Config
+
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return Config{}, err
+	}
+
+	err = yaml.Unmarshal(data, &cnf)
+	if err != nil {
+		return Config{}, err
+	}
+
+	return cnf, nil
+}
+
 func main() {
+
+	conf, err := Configure("./config.yaml")
+	if err != nil {
+		log.Println("can't configure app: ", err)
+		log.Println("using default settings")
+	} else {
+		width = conf.Width
+		height = conf.Height
+		rows = conf.Rows
+		columns = conf.Columns
+		fps = conf.Fps
+	}
+
 	window := initWindow()
 	defer glfw.Terminate()
 
