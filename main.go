@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/go-gl/gl/all-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
+	"log"
 	"math/rand"
 	"runtime"
 	"time"
@@ -15,7 +16,7 @@ const (
 	rows    = 100
 	columns = 100
 
-	fps = 30
+	fps = 10
 )
 
 var (
@@ -62,10 +63,12 @@ func main() {
 			spawnFood()
 		}
 
-		DrawCanvas()
-		Render(window)
+		DrawCanvas(window)
+
+		log.Println("tick in ", time.Since(t).Truncate(time.Millisecond))
 
 		time.Sleep(time.Second/time.Duration(fps) - time.Since(t))
+
 	}
 
 }
