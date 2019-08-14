@@ -52,19 +52,33 @@ var (
 	}
 )
 
-func DrawCanvas() {
+func DrawCanvas(window *glfw.Window) {
+	vaos := make([]uint32, 0)
+	vbos := make([]uint32, 0)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	for x := range grid {
 		for y := range grid[x] {
 			if grid[x][y] == nil {
 				continue
 			}
-			grid[x][y].Draw()
+			vao, vbo := grid[x][y].Draw()
+			vaos = append(vaos, vao)
+			vbos = append(vbos, vbo)
 		}
 	}
+
+	Render(window)
+
+	for _, v := range vaos {
+		gl.DeleteVertexArrays(1, &v)
+	}
+	for _, v := range vbos {
+		gl.DeleteBuffers(1, &v)
+	}
+	log.Println("deleted ", len(vaos), " ", len(vbos))
 }
 
-func (d *Drawable) Draw() {
+func (d *Drawable) Draw() (uint32, uint32) {
 	gl.UseProgram(d.prog)
 	points := make([]float32, len(square), len(square))
 	copy(points, square)
@@ -90,12 +104,13 @@ func (d *Drawable) Draw() {
 		}
 	}
 
-	vao := makeVao(points)
+	vao, vbo := makeVao(points)
 	gl.BindVertexArray(vao)
 	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(square)/3))
+	return vao, vbo
 }
 
-func makeVao(points []float32) uint32 {
+func makeVao(points []float32) (uint32, uint32) {
 	var vbo uint32
 	gl.GenBuffers(1, &vbo)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
@@ -108,7 +123,7 @@ func makeVao(points []float32) uint32 {
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, nil)
 
-	return vao
+	return vao, vbo
 }
 
 func Render(window *glfw.Window) {
