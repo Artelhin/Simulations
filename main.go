@@ -84,7 +84,7 @@ func main() {
 	defer glfw.Terminate()
 
 	grid = make([][]*Cell, rows, rows)
-	for i := 0; i < columns; i++ {
+	for i := 0; i < rows; i++ {
 		grid[i] = make([]*Cell, columns, columns)
 	}
 
